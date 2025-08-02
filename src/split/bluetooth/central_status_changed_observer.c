@@ -83,8 +83,8 @@ static int reserve_psptr_peripheral_slot_for_conn(struct bt_conn *conn) {
         }
     }
 #else
-    int i = zmk_ble_put_peripheral_addr(bt_conn_get_dst(conn));
-    if (i >= 0) {
+    // Find an open slot for the connection
+    for (int i = 0; i < CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS; i++) {
         if (peripherals[i].state == PERIPHERAL_SLOT_STATE_OPEN) {
             // Be sure the slot is fully reinitialized.
             release_psptr_peripheral_slot(i);
@@ -128,7 +128,7 @@ static void split_central_process_connection(struct bt_conn *conn) {
             info.le.latency);
 
     raise_zmk_split_central_status_changed((struct zmk_split_central_status_changed){
-        .slot = peripheral_slot_index_for_conn(conn),
+        .slot = psptr_peripheral_slot_for_conn(conn),
         .connected = true,
     });
 }
@@ -172,7 +172,7 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
     LOG_DBG("Disconnected: %s (reason %d)", addr_str, reason);
 
     raise_zmk_split_central_status_changed((struct zmk_split_central_status_changed){
-        .slot = peripheral_slot_index_for_conn(conn),
+        .slot = psptr_peripheral_slot_index_for_conn(conn),
         .connected = false,
     });
 
